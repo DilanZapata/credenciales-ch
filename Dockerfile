@@ -18,17 +18,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql zip opcache \
     && rm -rf /var/lib/apt/lists/*
 
-#  Verificacion en tiempo de construccion: si falta una extension, la imagen
-#  no se publica. Vale mas romper aqui que descubrirlo en produccion cuando
-#  alguien intente generar un reporte.
-RUN set -eux; \
-    for ext in pdo_mysql zip opcache openssl mbstring; do \
-        php -m | grep -qix "$ext" || { echo "FALTA la extension de PHP: $ext"; exit 1; }; \
-    done; \
-    php -r 'new ZipArchive();' \
-    && php -r 'exit(in_array("aes-256-gcm", openssl_get_cipher_methods()) ? 0 : 1);' \
-    && echo "Extensiones verificadas correctamente"
-
 # --- Apache ----------------------------------------------------------
 #  El DocumentRoot apunta a public/: el resto del proyecto queda fuera
 #  del alcance del servidor web.
@@ -54,6 +43,11 @@ RUN rm -f .env \
     && find /var/www/html -type d -exec chmod 750 {} \; \
     && chmod 755 /var/www/html/public \
     && chmod 644 /var/www/html/public/.htaccess 2>/dev/null || true
+
+#  Verificacion en tiempo de construccion. Si falta una extension critica
+#  la imagen NO se publica: vale mas romper aqui que descubrirlo en
+#  produccion cuando alguien intente generar un reporte.
+RUN php docker/check-extensions.php
 
 COPY docker/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

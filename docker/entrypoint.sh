@@ -19,14 +19,11 @@ if [ -z "${APP_MASTER_KEY:-}" ]; then
 fi
 
 echo "==> Verificando extensiones de PHP"
-for ext in pdo_mysql zip openssl mbstring; do
-    if ! php -m | grep -qix "$ext"; then
-        echo "!!! Falta la extension de PHP: $ext"
-        echo "    La imagen se construyo mal. Reconstruya sin usar cache."
-        exit 1
-    fi
-done
-echo "    pdo_mysql, zip, openssl y mbstring disponibles."
+if ! php docker/check-extensions.php; then
+    echo "!!! La imagen se construyo de forma incompleta."
+    echo "    Vuelva a desplegar con la cache limpia (Clean Cache)."
+    exit 1
+fi
 
 echo "==> Esperando a la base de datos (${DB_HOST:-db}:${DB_PORT:-3306})"
 intentos=0
