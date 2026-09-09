@@ -128,7 +128,7 @@ En *Domains*, sobre el servicio `app`:
 | Campo | Valor |
 |---|---|
 | Host | `credenciales.suempresa.com` |
-| Container Port | `80` |
+| Container Port | **`80`** — no deje el 3000 que trae por defecto |
 | HTTPS | **activado** |
 | Certificate | Let's Encrypt |
 
@@ -247,3 +247,6 @@ php bin/console.php migrate:status
 | Los enlaces apuntan a `/credencial/public/...` | `APP_BASE_PATH` con valor | Debe ir **vacío** con dominio propio |
 | `No fue posible conectar con la base de datos` | Contraseña distinta entre `app` y `db` | `DB_PASSWORD` debe ser la misma para ambos |
 | Se ve la IP real como `172.x` en la auditoría | Falta confiar en el proxy | `APP_TRUST_PROXY=true` (ya viene en el compose) |
+| **`404 page not found` con certificado «TRAEFIK DEFAULT CERT»** | Traefik no tiene ninguna ruta para ese host: o el servicio `app` no está en la red `dokploy-network`, o el contenedor no llegó a arrancar | El compose ya declara `dokploy-network`. Compruebe en *Containers* que `app` está **running** y revise los *Logs* |
+| **502 Bad Gateway** | El puerto del dominio no coincide con el del contenedor | *Domains* → Container Port = **80** |
+| El contenedor arranca y se apaga solo | Falta `APP_MASTER_KEY` | El entrypoint aborta a propósito. Añádala en *Environment* |

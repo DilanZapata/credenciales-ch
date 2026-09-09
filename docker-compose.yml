@@ -9,6 +9,11 @@
 #     DB_ROOT_PASSWORD contrasena de root de MariaDB
 #
 #  El dominio y el certificado TLS los gestiona Dokploy (Traefik).
+#
+#  IMPORTANTE al configurar el dominio en Dokploy:
+#     Service Name   = app
+#     Container Port = 80        <-- NO 3000 (ese es el valor por defecto
+#                                    de Dokploy, pensado para apps Node)
 # =====================================================================
 services:
 
@@ -53,7 +58,11 @@ services:
     expose:
       - "80"
     networks:
+      # Red interna: unico camino hacia la base de datos.
       - scgca
+      # Red del proxy de Dokploy (Traefik). Sin esto Traefik no puede
+      # alcanzar el contenedor y responde "404 page not found".
+      - dokploy-network
 
   db:
     image: mariadb:11.4
@@ -121,4 +130,10 @@ volumes:
   scgca_storage:
 
 networks:
+  # Red privada del proyecto: la base de datos solo es alcanzable aqui.
   scgca:
+
+  # Red compartida donde corre el proxy de Dokploy. La crea Dokploy al
+  # instalarse; aqui solo se declara como existente.
+  dokploy-network:
+    external: true
