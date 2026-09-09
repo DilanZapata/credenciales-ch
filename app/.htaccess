@@ -1,0 +1,2 @@
+# Directorio interno: nunca accesible por HTTP.
+Require all denied

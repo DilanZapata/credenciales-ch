@@ -1,0 +1,25 @@
+# El .env NUNCA entra en la imagen: la configuracion se inyecta como
+# variables de entorno desde Dokploy.
+.env
+.env.*
+!.env.example
+
+.git
+.gitignore
+.github
+
+# Datos locales que no deben viajar a produccion
+storage/logs/*
+storage/tmp/*
+storage/exports/*
+
+# Herramientas de desarrollo
+tests/
+docs/
+*.md
+!README.md
+
+.DS_Store
+.idea/
+.vscode/
+node_modules/

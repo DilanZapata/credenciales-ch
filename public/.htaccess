@@ -1,0 +1,35 @@
+# ---------------------------------------------------------------------
+#  Controlador frontal y endurecimiento del servidor web
+#  Este es el UNICO directorio del proyecto que debe ser accesible por HTTP.
+# ---------------------------------------------------------------------
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # Todo lo que no corresponda a un archivo o directorio real se enruta
+    # por index.php (sin RewriteBase: funciona tanto en subdirectorio como
+    # en un VirtualHost con DocumentRoot en public/).
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    RewriteRule ^ index.php [QSA,L]
+</IfModule>
+
+# Sin listados de directorio ni negociacion de contenido
+Options -Indexes -MultiViews
+
+# Ningun archivo sensible debe servirse aunque llegara a copiarse aqui por error
+<FilesMatch "(^\.|\.(env|sql|log|md|json|lock|ini|bak|sqlite|xlsx|xls|csv|yml|yaml)$)">
+    Require all denied
+</FilesMatch>
+
+<IfModule mod_headers.c>
+    Header always set X-Content-Type-Options "nosniff"
+    Header always set X-Frame-Options "DENY"
+    Header always set Referrer-Policy "no-referrer"
+    Header unset X-Powered-By
+    Header always unset Server
+</IfModule>
+
+<IfModule mod_php.c>
+    php_flag display_errors Off
+    php_flag expose_php Off
+</IfModule>

@@ -1,0 +1,23 @@
+# ---------------------------------------------------------------------
+#  Raiz del proyecto.
+#
+#  Lo ideal es que el DocumentRoot del servidor apunte directamente a
+#  public/ y que este directorio NO sea alcanzable por HTTP. Cuando eso no
+#  es posible (por ejemplo en una instalacion XAMPP bajo htdocs/), aqui
+#  solo se permite el index.php de cortesia que redirige a public/, y se
+#  bloquea el acceso a cualquier archivo interno.
+# ---------------------------------------------------------------------
+
+Options -Indexes -MultiViews
+DirectoryIndex index.php
+
+# Todo archivo sensible queda bloqueado aunque cambie la configuracion
+# del servidor o alguien copie algo por error en esta carpeta.
+<FilesMatch "(^\.|\.(env|sql|log|md|json|lock|ini|bak|sqlite|yml|yaml|xlsx|csv)$)">
+    Require all denied
+</FilesMatch>
+
+# Ningun .php de la raiz debe ejecutarse salvo el redirector.
+<FilesMatch "^(?!index\.php$).*\.php$">
+    Require all denied
+</FilesMatch>

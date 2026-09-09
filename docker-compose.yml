@@ -1,0 +1,124 @@
+# =====================================================================
+#  Despliegue en Dokploy (tipo "Compose")
+#
+#  Variables que DEBE definir en el panel de Dokploy:
+#     APP_MASTER_KEY   32 bytes en base64  (irremplazable: guarde copia)
+#     APP_PEPPER       32 bytes en base64
+#     APP_URL          https://credenciales.suempresa.com
+#     DB_PASSWORD      contrasena del usuario de la base
+#     DB_ROOT_PASSWORD contrasena de root de MariaDB
+#
+#  El dominio y el certificado TLS los gestiona Dokploy (Traefik).
+# =====================================================================
+services:
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_NAME:         "${APP_NAME:-Sistema Corporativo de Gestion de Credenciales}"
+      APP_SHORT_NAME:   "${APP_SHORT_NAME:-Credenciales}"
+      APP_ORGANIZATION: "${APP_ORGANIZATION:-Mi Empresa}"
+      APP_ENV:          production
+      APP_DEBUG:        "false"
+      APP_URL:          "${APP_URL}"
+      # Con dominio propio la aplicacion vive en la raiz: sin prefijo.
+      APP_BASE_PATH:    ""
+      APP_TIMEZONE:     "${APP_TIMEZONE:-America/Bogota}"
+      # Dokploy publica detras de Traefik: se confia en X-Forwarded-*
+      APP_TRUST_PROXY:  "true"
+
+      APP_MASTER_KEY:   "${APP_MASTER_KEY}"
+      APP_PEPPER:       "${APP_PEPPER}"
+
+      DB_HOST:          db
+      DB_PORT:          "3306"
+      DB_DATABASE:      "${DB_DATABASE:-credenciales_corp}"
+      DB_USERNAME:      "${DB_USERNAME:-credenciales}"
+      DB_PASSWORD:      "${DB_PASSWORD}"
+
+      # HTTPS obligatorio en produccion: la cookie va marcada Secure.
+      SESSION_SECURE:   "true"
+      SESSION_SAMESITE: Strict
+
+      CORS_ENABLED:     "false"
+    volumes:
+      # Solo los datos que deben sobrevivir a un redespliegue.
+      - scgca_storage:/var/www/html/storage
+    expose:
+      - "80"
+    networks:
+      - scgca
+
+  db:
+    image: mariadb:11.4
+    restart: unless-stopped
+    environment:
+      MARIADB_ROOT_PASSWORD: "${DB_ROOT_PASSWORD}"
+      MARIADB_DATABASE:      "${DB_DATABASE:-credenciales_corp}"
+      MARIADB_USER:          "${DB_USERNAME:-credenciales}"
+      MARIADB_PASSWORD:      "${DB_PASSWORD}"
+    volumes:
+      - scgca_db:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "healthcheck.sh", "--connect", "--innodb_initialized"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 30s
+    networks:
+      - scgca
+    # La base NO se publica al exterior: solo la alcanza la aplicacion.
+
+  # Tareas programadas: alertas diarias y mantenimiento cada 10 minutos.
+  # El mantenimiento es el que impide que un Excel con contrasenas quede
+  # abandonado en el servidor.
+  cron:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      APP_ENV:         production
+      APP_DEBUG:       "false"
+      APP_URL:         "${APP_URL}"
+      APP_TIMEZONE:    "${APP_TIMEZONE:-America/Bogota}"
+      APP_MASTER_KEY:  "${APP_MASTER_KEY}"
+      APP_PEPPER:      "${APP_PEPPER}"
+      DB_HOST:         db
+      DB_PORT:         "3306"
+      DB_DATABASE:     "${DB_DATABASE:-credenciales_corp}"
+      DB_USERNAME:     "${DB_USERNAME:-credenciales}"
+      DB_PASSWORD:     "${DB_PASSWORD}"
+    volumes:
+      - scgca_storage:/var/www/html/storage
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - |
+        ultima_alerta=""
+        while true; do
+          php /var/www/html/bin/console.php maintenance >/dev/null 2>&1 || true
+          hoy=$$(date +%F)
+          if [ "$$(date +%H)" = "07" ] && [ "$$ultima_alerta" != "$$hoy" ]; then
+            php /var/www/html/bin/console.php alerts:run || true
+            ultima_alerta="$$hoy"
+          fi
+          sleep 600
+        done
+    networks:
+      - scgca
+
+volumes:
+  scgca_db:
+  scgca_storage:
+
+networks:
+  scgca:

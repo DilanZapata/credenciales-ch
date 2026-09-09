@@ -1,0 +1,44 @@
+# =====================================================================
+#  NUNCA VERSIONAR
+# =====================================================================
+
+# El .env contiene APP_MASTER_KEY: con ella se descifran TODOS los
+# secretos del sistema. Jamas debe entrar en el repositorio.
+.env
+.env.local
+.env.*.local
+*.key
+*.pem
+
+# Datos en tiempo de ejecucion
+storage/logs/*
+storage/tmp/*
+storage/exports/*
+!storage/logs/.gitkeep
+!storage/tmp/.gitkeep
+!storage/exports/.gitkeep
+
+# Volcados de base de datos: contienen los secretos cifrados y toda la
+# auditoria. Se respaldan aparte, no en git.
+*.sql.gz
+*.sql.bak
+dump*.sql
+backup*.sql
+
+# Archivos exportados (pueden contener contrasenas reales)
+*.xlsx
+*.xls
+*.csv
+
+# =====================================================================
+#  Ruido del entorno
+# =====================================================================
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*~
+node_modules/
+vendor/
+composer.lock
