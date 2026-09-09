@@ -18,6 +18,16 @@ if [ -z "${APP_MASTER_KEY:-}" ]; then
     exit 1
 fi
 
+echo "==> Verificando extensiones de PHP"
+for ext in pdo_mysql zip openssl mbstring; do
+    if ! php -m | grep -qix "$ext"; then
+        echo "!!! Falta la extension de PHP: $ext"
+        echo "    La imagen se construyo mal. Reconstruya sin usar cache."
+        exit 1
+    fi
+done
+echo "    pdo_mysql, zip, openssl y mbstring disponibles."
+
 echo "==> Esperando a la base de datos (${DB_HOST:-db}:${DB_PORT:-3306})"
 intentos=0
 until php -r '

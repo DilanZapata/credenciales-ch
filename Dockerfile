@@ -8,14 +8,26 @@ FROM php:8.2-apache
 #  pdo_mysql : acceso a la base de datos
 #  zip       : generacion de los archivos .xlsx
 #  opcache   : rendimiento en produccion
+#  NO se purga libzip-dev despues de compilar: al hacerlo con --auto-remove
+#  se elimina tambien libzip en tiempo de ejecucion y la extension queda
+#  compilada pero imposible de cargar (libzip.so: cannot open shared object
+#  file), con lo que la exportacion a Excel deja de funcionar en silencio.
 RUN apt-get update && apt-get install -y --no-install-recommends \
         libzip-dev \
-        libicu-dev \
         default-mysql-client \
-    && docker-php-ext-configure zip \
     && docker-php-ext-install -j"$(nproc)" pdo_mysql zip opcache \
-    && apt-get purge -y --auto-remove libzip-dev libicu-dev \
     && rm -rf /var/lib/apt/lists/*
+
+#  Verificacion en tiempo de construccion: si falta una extension, la imagen
+#  no se publica. Vale mas romper aqui que descubrirlo en produccion cuando
+#  alguien intente generar un reporte.
+RUN set -eux; \
+    for ext in pdo_mysql zip opcache openssl mbstring; do \
+        php -m | grep -qix "$ext" || { echo "FALTA la extension de PHP: $ext"; exit 1; }; \
+    done; \
+    php -r 'new ZipArchive();' \
+    && php -r 'exit(in_array("aes-256-gcm", openssl_get_cipher_methods()) ? 0 : 1);' \
+    && echo "Extensiones verificadas correctamente"
 
 # --- Apache ----------------------------------------------------------
 #  El DocumentRoot apunta a public/: el resto del proyecto queda fuera
