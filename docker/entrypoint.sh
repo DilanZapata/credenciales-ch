@@ -49,5 +49,11 @@ php bin/console.php migrate
 echo "==> Diagnostico"
 php bin/console.php doctor || true
 
+# Las ordenes anteriores corren como root y pueden haber creado archivos de
+# log de su propiedad. Se devuelve storage/ a www-data para que Apache pueda
+# seguir escribiendo.
+chown -R www-data:www-data storage
+chmod -R 750 storage
+
 echo "==> Listo. Iniciando Apache."
 exec "$@"
