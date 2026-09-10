@@ -109,6 +109,11 @@ services:
       DB_PASSWORD:     "${DB_PASSWORD}"
     volumes:
       - scgca_storage:/var/www/html/storage
+    # El chequeo de salud de la imagen comprueba que Apache responda, pero
+    # este contenedor no levanta Apache: solo ejecuta el bucle de tareas.
+    # Sin desactivarlo quedaria marcado como "unhealthy" para siempre.
+    healthcheck:
+      disable: true
     entrypoint: ["/bin/bash", "-c"]
     command:
       - |
