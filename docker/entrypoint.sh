@@ -10,11 +10,8 @@ set -euo pipefail
 
 cd /var/www/html
 
-echo "==> Verificando la clave maestra"
-if [ -z "${APP_MASTER_KEY:-}" ]; then
-    echo "!!! APP_MASTER_KEY no esta definida."
-    echo "    Genere una con:  php -r 'echo base64_encode(random_bytes(32)), PHP_EOL;'"
-    echo "    y cargela como variable de entorno en Dokploy."
+echo "==> Verificando el material criptografico"
+if ! php docker/check-crypto.php; then
     exit 1
 fi
 

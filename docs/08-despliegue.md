@@ -249,6 +249,7 @@ php bin/console.php migrate:status
 | Se ve la IP real como `172.x` en la auditoría | Falta confiar en el proxy | `APP_TRUST_PROXY=true` (ya viene en el compose) |
 | **`404 page not found` con certificado «TRAEFIK DEFAULT CERT»** | Traefik no tiene ninguna ruta para ese host: o el servicio `app` no está en la red `dokploy-network`, o el contenedor no llegó a arrancar | El compose ya declara `dokploy-network`. Compruebe en *Containers* que `app` está **running** y revise los *Logs* |
 | **502 Bad Gateway** | El puerto del dominio no coincide con el del contenedor | *Domains* → Container Port = **80** |
-| El contenedor arranca y se apaga solo | Falta `APP_MASTER_KEY`, o falta una extensión de PHP | El entrypoint aborta a propósito. Lea el motivo en *Logs* |
+| El contenedor arranca y se apaga solo | Falta `APP_MASTER_KEY`, es inválida, o falta una extensión de PHP | El entrypoint aborta a propósito y dice exactamente qué pasa. Léalo en *Logs* |
+| `APP_MASTER_KEY invalida: se esperan 32 bytes en base64` | La variable se pegó con comillas, con espacios o recortada | Debe ser **44 caracteres terminados en `=`**, sin comillas. El `=` final forma parte de la clave |
 | `Unable to load dynamic library 'zip'` | Imagen construida con caché de una versión defectuosa | *Deploy* con **Clean Cache** activado |
 | `Could not open input file: bin/console.php` | La terminal abre en `/` | `cd /var/www/html` antes del comando |
